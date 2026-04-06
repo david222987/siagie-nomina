@@ -1,0 +1,7 @@
+flask
+gunicorn
+pdfplumber
+pypdf
+pandas
+openpyxl
+werkzeug
