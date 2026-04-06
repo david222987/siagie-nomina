@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIAGIE — Nómina de Matrícula 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rojo:   #b91c1c;
+      --azul:   #1e3a5f;
+      --azul2:  #2563eb;
+      --verde:  #16a34a;
+      --gris1:  #f1f5f9;
+      --gris2:  #cbd5e1;
+      --gris3:  #94a3b8;
+      --texto:  #1e293b;
+      --blanco: #ffffff;
+      --sombra: 0 2px 16px rgba(0,0,0,.09);
+      --r: 10px;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gris1); color: var(--texto); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+      color: #fff; padding: 14px 28px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--sombra);
+    }
+    .hdr-escudo { font-size: 2.2rem; }
+    .hdr-title  { font-size: 1.15rem; font-weight: 700; }
+    .hdr-sub    { font-size: .75rem; opacity: .75; margin-top: 2px; }
+    .hdr-badge  {
+      margin-left: auto; background: var(--rojo); color: #fff;
+      font-size: .68rem; font-weight: 700; padding: 4px 14px;
+      border-radius: 20px; letter-spacing: .5px; white-space: nowrap;
+    }
+
+    /* ── Layout ── */
+    main { max-width: 1060px; margin: 28px auto; padding: 0 16px; display: grid; gap: 22px; }
+    .card { background: var(--blanco); border-radius: var(--r); box-shadow: var(--sombra); padding: 26px 30px; }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--azul); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 2.5px dashed var(--gris2); border-radius: var(--r);
+      padding: 36px 20px; text-align: center; cursor: pointer;
+      transition: all .2s; background: var(--gris1);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--azul2); background: #eff6ff; }
+    .dz-icon { font-size: 2.6rem; margin-bottom: 8px; }
+    .dz-title { font-size: 1rem; color: var(--azul); margin-bottom: 4px; font-weight: 600; }
+    .dz-sub   { font-size: .82rem; color: var(--gris3); }
+    #fileInput { display: none; }
+
+    #fileList { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .file-chip {
+      background: #eff6ff; border: 1px solid #bfdbfe; color: var(--azul);
+      font-size: .78rem; padding: 4px 12px; border-radius: 20px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .file-chip button { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: .9rem; line-height: 1; }
+
+    /* ── Botones ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: 8px; border: none;
+      font-size: .88rem; font-weight: 600; cursor: pointer; transition: all .18s;
+    }
+    .btn-primary { background: var(--azul); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #2c5282; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-success { background: var(--verde); color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-outline { background: none; border: 2px solid var(--azul2); color: var(--azul2); }
+    .btn-outline:hover { background: var(--azul2); color: #fff; }
+    .acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+
+    /* ── Spinner ── */
+    #spinner { display: none; align-items: center; gap: 10px; color: var(--azul2); font-size: .88rem; margin-top: 14px; }
+    #spinner.show { display: flex; }
+    .spin { width: 20px; height: 20px; border: 3px solid var(--gris2); border-top-color: var(--azul2); border-radius: 50%; animation: rot .7s linear infinite; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* ── Stats ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .stat { background: var(--gris1); border-radius: 8px; padding: 14px; text-align: center; }
+    .stat .n { font-size: 1.9rem; font-weight: 800; color: var(--azul); line-height: 1.1; }
+    .stat .l { font-size: .72rem; color: var(--gris3); margin-top: 3px; }
+
+    /* ── Alertas ── */
+    .alert { padding: 10px 14px; border-radius: 8px; font-size: .85rem; margin-bottom: 10px; display: flex; gap: 8px; }
+    .a-err { background: #fef2f2; border-left: 4px solid var(--rojo); color: var(--rojo); }
+    .a-ok  { background: #f0fdf4; border-left: 4px solid var(--verde); color: #15803d; }
+    .a-inf { background: #eff6ff; border-left: 4px solid var(--azul2); color: var(--azul2); }
+
+    /* ── Tabla ── */
+    #resultados { display: none; }
+    .tabla-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gris2); }
+    table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+    thead tr { background: var(--azul); color: #fff; }
+    thead th { padding: 11px 14px; text-align: left; white-space: nowrap; font-weight: 600; font-size: .82rem; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:hover { background: #eff6ff; }
+    tbody td { padding: 9px 10px; vertical-align: middle; }
+
+    /* ── Celda con valor + botón copiar ── */
+    .celda-copiable {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-copiar {
+      background: none;
+      border: 1.5px solid var(--gris2);
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 3px 6px;
+      font-size: .78rem;
+      color: var(--gris3);
+      line-height: 1;
+      transition: all .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-copiar:hover { border-color: var(--azul2); color: var(--azul2); background: #eff6ff; }
+    .btn-copiar.copiado { border-color: var(--verde); color: var(--verde); background: #f0fdf4; }
+
+    /* Badges de valor */
+    .dni {
+      font-family: 'Courier New', monospace;
+      background: var(--azul); color: #fff;
+      padding: 3px 10px; border-radius: 5px;
+      font-size: .82rem; letter-spacing: 1.5px; white-space: nowrap;
+    }
+    .cod {
+      font-family: 'Courier New', monospace;
+      background: #f1f5f9; color: var(--azul);
+      padding: 2px 8px; border-radius: 4px;
+      font-size: .82rem; letter-spacing: 1px;
+      border: 1px solid var(--gris2);
+    }
+
+    /* ── Buscador ── */
+    .barra { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .barra input {
+      flex: 1; min-width: 180px; padding: 8px 14px;
+      border: 1.5px solid var(--gris2); border-radius: 8px;
+      font-size: .86rem; outline: none; transition: border .15s;
+    }
+    .barra input:focus { border-color: var(--azul2); }
+    .count-lbl { font-size: .8rem; color: var(--gris3); white-space: nowrap; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e293b; color: #fff;
+      padding: 10px 18px; border-radius: 8px; font-size: .84rem;
+      opacity: 0; transform: translateY(10px);
+      transition: all .25s; pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    footer { text-align: center; font-size: .72rem; color: var(--gris3); padding: 20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-escudo">🇵🇪</div>
+  <div>
+    <div class="hdr-title">SIAGIE — Nómina de Matrícula</div>
+    <div class="hdr-sub">Extracción automática de datos · Ministerio de Educación del Perú</div>
+  </div>
+  <span class="hdr-badge">MINEDU 2026</span>
+</header>
+
+<main>
+
+  <!-- CARGA -->
+  <div class="card">
+    <div class="card-title">📂 Cargar archivos PDF</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="dz-icon">📄</div>
+      <div class="dz-title">Arrastra las Nóminas de Matrícula aquí</div>
+      <div class="dz-sub">O haz clic para seleccionar · PDF únicamente · Máx. 32 MB c/u</div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" multiple />
+    <div id="fileList"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center;">
+      <button class="btn btn-primary" id="btnProcesar" onclick="procesarPDFs()" disabled>🔍 Extraer datos</button>
+      <button class="btn btn-outline" onclick="limpiarTodo()">🗑️ Limpiar todo</button>
+    </div>
+    <div id="spinner">
+      <div class="spin"></div>
+      <span id="spinMsg">Procesando PDF…</span>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="card" id="resultados">
+    <div class="stats" id="statsBox"></div>
+    <div id="alertas"></div>
+
+    <div class="card-title">📋 Datos extraídos — Nómina de Matrícula</div>
+
+    <div class="barra">
+      <input type="text" id="buscador" placeholder="🔎 Buscar por DNI, nombre, IE o código modular…" oninput="filtrarTabla()" />
+      <span class="count-lbl" id="countLbl"></span>
+    </div>
+
+    <div class="tabla-wrap">
+      <table id="tablaAlumnos">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>DNI</th>
+            <th>Apellidos y Nombres</th>
+            <th>Institución Educativa</th>
+            <th>Cód. Modular</th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody"></tbody>
+      </table>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-success" onclick="exportarExcel()">📥 Exportar Excel (.xlsx)</button>
+      <button class="btn btn-outline" onclick="copiarTodo()">📋 Copiar todo</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>SIAGIE Extractor · Procesamiento local · Los datos no se almacenan en ningún servidor</footer>
+<div id="toast"></div>
+
+<script>
+  let archivos = [];
+  let datosExtraidos = [];
+
+  // ── Drag & Drop ───────────────────────────────────────────────────────────
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    agregarArchivos([...e.dataTransfer.files]);
+  });
+  fileInput.addEventListener('change', () => { agregarArchivos([...fileInput.files]); fileInput.value = ''; });
+
+  function agregarArchivos(nuevos) {
+    nuevos.filter(f => f.name.toLowerCase().endsWith('.pdf')).forEach(f => {
+      if (!archivos.find(x => x.name === f.name && x.size === f.size)) archivos.push(f);
+    });
+    renderFileList();
+  }
+
+  function renderFileList() {
+    document.getElementById('fileList').innerHTML = archivos.map((f, i) => `
+      <div class="file-chip">
+        📄 ${f.name} <span style="opacity:.55">(${(f.size/1024).toFixed(0)} KB)</span>
+        <button onclick="quitarArchivo(${i})">✕</button>
+      </div>`).join('');
+    document.getElementById('btnProcesar').disabled = archivos.length === 0;
+  }
+
+  function quitarArchivo(i) { archivos.splice(i, 1); renderFileList(); }
+
+  function limpiarTodo() {
+    archivos = []; datosExtraidos = [];
+    renderFileList();
+    document.getElementById('resultados').style.display = 'none';
+    document.getElementById('alertas').innerHTML = '';
+    document.getElementById('buscador').value = '';
+  }
+
+  // ── Procesamiento ─────────────────────────────────────────────────────────
+  async function procesarPDFs() {
+    if (!archivos.length) return;
+    spinner(true, `Procesando ${archivos.length} archivo(s)…`);
+    document.getElementById('btnProcesar').disabled = true;
+    document.getElementById('resultados').style.display = 'none';
+
+    const fd = new FormData();
+    archivos.forEach(f => fd.append('archivos', f));
+
+    try {
+      const resp = await fetch('/procesar', { method: 'POST', body: fd });
+      const data = await resp.json();
+      if (!resp.ok) { alerta('err', '❌ ' + (data.error || 'Error')); return; }
+      datosExtraidos = data.alumnos || [];
+      renderResultados(data);
+    } catch(e) {
+      alerta('err', '❌ Error de red: ' + e.message);
+    } finally {
+      spinner(false);
+      document.getElementById('btnProcesar').disabled = archivos.length === 0;
+    }
+  }
+
+  function renderResultados(data) {
+    const { alumnos = [], errores = [], total = 0 } = data;
+
+    const ies = [...new Set(alumnos.map(a => a.ie).filter(x => x !== '—'))];
+    document.getElementById('statsBox').innerHTML = `
+      <div class="stat"><div class="n">${total}</div><div class="l">Alumnos</div></div>
+      <div class="stat"><div class="n">${ies.length || '—'}</div><div class="l">Inst. Educativas</div></div>
+      <div class="stat"><div class="n">${archivos.length}</div><div class="l">PDFs procesados</div></div>
+    `;
+
+    const alertDiv = document.getElementById('alertas');
+    alertDiv.innerHTML = '';
+    errores.forEach(e => alertDiv.innerHTML += `<div class="alert a-err">⚠️ ${e}</div>`);
+    if (total > 0)
+      alertDiv.innerHTML += `<div class="alert a-ok">✅ Se extrajeron ${total} registro(s) correctamente.</div>`;
+    else
+      alertDiv.innerHTML += `<div class="alert a-inf">ℹ️ No se encontraron alumnos en el PDF.</div>`;
+
+    renderTabla(alumnos);
+    document.getElementById('buscador').value = '';
+    document.getElementById('resultados').style.display = 'block';
+    document.getElementById('resultados').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── Render tabla ── CORRECCIÓN: data-valor en lugar de onclick con valor inline
+  function renderTabla(alumnos) {
+    const tbody = document.getElementById('tablaBody');
+    tbody.innerHTML = alumnos.map((a, i) => `
+      <tr>
+        <td style="color:var(--gris3);font-size:.8rem;text-align:center">${i + 1}</td>
+
+        <td>
+          <div class="celda-copiable">
+            <span class="dni">${esc(a.dni)}</span>
+            <button class="btn-copiar" data-valor="${esc(a.dni)}">⧉ Copiar</button>
+          </div>
+        </td>
+
+        <td>
+          <div class="celda-copiable">
+            <strong>${esc(a.nombre)}</strong>
+            <button class="btn-copiar" data-valor="${esc(a.nombre)}">⧉ Copiar</button>
+          </div>
+        </td>
+
+        <td>
+          <div class="celda-copiable">
+            <span>${esc(a.ie)}</span>
+            <button class="btn-copiar" data-valor="${esc(a.ie)}">⧉ Copiar</button>
+          </div>
+        </td>
+
+        <td>
+          <div class="celda-copiable">
+            <span class="cod">${esc(a.codigo_modular)}</span>
+            <button class="btn-copiar" data-valor="${esc(a.codigo_modular)}">⧉ Copiar</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('countLbl').textContent = `${alumnos.length} registro(s)`;
+  }
+
+  // ── Delegación de eventos: un solo listener para TODOS los botones copiar ──
+  document.getElementById('tablaBody').addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-copiar');
+    if (!btn) return;
+
+    // Leer el valor desde data-valor y decodificar entidades HTML
+    const txt = decodeHtmlEntities(btn.getAttribute('data-valor') || '');
+
+    navigator.clipboard.writeText(txt).then(() => {
+      btn.textContent = '✓ Copiado';
+      btn.classList.add('copiado');
+      setTimeout(() => {
+        btn.textContent = '⧉ Copiar';
+        btn.classList.remove('copiado');
+      }, 1800);
+    }).catch(() => toast('Error al copiar'));
+  });
+
+  // Decodifica entidades HTML (&amp; → &, &quot; → ", etc.)
+  function decodeHtmlEntities(str) {
+    const el = document.createElement('textarea');
+    el.innerHTML = str;
+    return el.value;
+  }
+
+  function filtrarTabla() {
+    const q = document.getElementById('buscador').value.toLowerCase().trim();
+    const filtrados = q
+      ? datosExtraidos.filter(a =>
+          a.dni.includes(q) || a.nombre.toLowerCase().includes(q) ||
+          a.ie.toLowerCase().includes(q) || a.codigo_modular.toLowerCase().includes(q))
+      : datosExtraidos;
+    renderTabla(filtrados);
+  }
+
+  // ── Exportar Excel ────────────────────────────────────────────────────────
+  async function exportarExcel() {
+    if (!datosExtraidos.length) { toast('Sin datos para exportar'); return; }
+    spinner(true, 'Generando Excel…');
+    try {
+      const resp = await fetch('/exportar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alumnos: datosExtraidos })
+      });
+      if (!resp.ok) { toast('Error al exportar'); return; }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'nomina_matricula_2026.xlsx'; a.click();
+      URL.revokeObjectURL(url);
+      toast('✅ Excel descargado');
+    } catch(e) { toast('Error: ' + e.message); }
+    finally { spinner(false); }
+  }
+
+  // ── Copiar tabla completa ─────────────────────────────────────────────────
+  function copiarTodo() {
+    if (!datosExtraidos.length) { toast('Sin datos'); return; }
+    const cab = 'DNI\tApellidos y Nombres\tInstitución Educativa\tCód. Modular';
+    const filas = datosExtraidos.map(a => `${a.dni}\t${a.nombre}\t${a.ie}\t${a.codigo_modular}`);
+    navigator.clipboard.writeText([cab, ...filas].join('\n'))
+      .then(() => toast('✅ Tabla copiada al portapapeles'))
+      .catch(() => toast('Error al copiar'));
+  }
+
+  // ── Utilidades ────────────────────────────────────────────────────────────
+  function spinner(on, msg = '') {
+    document.getElementById('spinner').className = on ? 'show' : '';
+    if (msg) document.getElementById('spinMsg').textContent = msg;
+  }
+  function alerta(tipo, msg) {
+    document.getElementById('alertas').innerHTML = `<div class="alert ${tipo==='err'?'a-err':'a-inf'}">${msg}</div>`;
+    document.getElementById('resultados').style.display = 'block';
+  }
+  function esc(str) {
+    const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
+  }
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
